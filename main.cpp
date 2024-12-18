@@ -1,31 +1,56 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
-int SDL_WINDOW_SIZE = 600;
-int AGENT_SIZE = 30;
+const int SDL_WINDOW_SIZE = 600;
+const int AGENT_SIZE = 30;
+const int SCREEN_FPS = 60;
+const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 SDL_Window* window = NULL;
 SDL_Texture* agenttex = NULL;
 SDL_Renderer* renderer = NULL;
 struct Agent {
-    SDL_Rect rect;
-    int dir = 0;
+    SDL_Rect* rect = new SDL_Rect;
+    double dir = 0;
+    double speed = 1;
+    pair<double, double> realpos;
     SDL_Texture* tex = agenttex;
-    Agent(int x, int y, int d) {
-        rect.x = x;
-        rect.y = y;
-        rect.h = AGENT_SIZE;
-        rect.w = AGENT_SIZE;
-        dir = d;
+    Agent(int x, int y, double d) {
+        realpos.first = x;
+        realpos.second = y;
+        rect->x = realpos.first;
+        rect->y = realpos.second;
+        rect->h = AGENT_SIZE;
+        rect->w = AGENT_SIZE;
+        dir = d - 90;
     };
     void update() {
-        // rect.x += 1;
+        double ny = realpos.second - sin(dir * M_PI / 180) * speed;
+        double nx = realpos.first + cos(dir * M_PI / 180) * speed;
+        // cout << nx << " " << ny << "\n";
+        if (ny < 0) {
+            ny += SDL_WINDOW_SIZE;
+        }
+        if (nx < 0) {
+            nx += SDL_WINDOW_SIZE;
+        }
+        if (nx > SDL_WINDOW_SIZE) {
+            nx -= SDL_WINDOW_SIZE;
+        } 
+        if (ny > SDL_WINDOW_SIZE) {
+            ny -= SDL_WINDOW_SIZE;
+        }
+        realpos.first = nx;
+        realpos.second = ny;
     };
     void render() {
-        SDL_RenderCopy(renderer, tex, NULL, &rect);
+        rect->x = realpos.first;
+        rect->y = realpos.second;
+        SDL_RenderCopyEx(renderer, tex, NULL, rect, dir + 90, NULL, SDL_FLIP_NONE);
     }
 };
 vector<Agent*> boid;
@@ -87,9 +112,10 @@ int init() {
 int main(int argc, char *argv[]) {
     if (!init()) return 1;
 
-    boid.push_back(new Agent(50, 50, 0));
-    boid.push_back(new Agent(50, 100, 0));
-    boid.push_back(new Agent(50, 0, 0));
+    boid.push_back(new Agent(50, 300, 0));
+    boid.push_back(new Agent(50, 300, 90)); 
+    boid.push_back(new Agent(50, 300, 180));
+    boid.push_back(new Agent(50, 300, 270));
 
     //Hack to get window to stay up
     SDL_Event e; bool quit = false; 
