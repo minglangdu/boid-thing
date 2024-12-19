@@ -2,11 +2,16 @@
 #include <SDL2/SDL.h>
 #include <vector>
 #include <cmath>
+#include <random>
 
 using namespace std;
 
 const int SDL_WINDOW_SIZE = 600;
 const int AGENT_SIZE = 30;
+const int AGENT_AMOUNT = 10;
+const int TURN_SPEED = 5; // larger values are slower turns
+const int MOVE_SPEED = 2;
+const int SIGHT_RADIUS = 50;
 
 SDL_Window* window = NULL;
 SDL_Texture* agenttex = NULL;
@@ -14,7 +19,7 @@ SDL_Renderer* renderer = NULL;
 struct Agent {
     SDL_Rect* rect = new SDL_Rect;
     double dir = 0;
-    double speed = 2;
+    double speed = MOVE_SPEED;
     Uint32 starttick;
     pair<double, double> realpos;
     SDL_Texture* tex = agenttex;
@@ -28,7 +33,23 @@ struct Agent {
         dir = d - 90;
         starttick = SDL_GetTicks();
     };
-    void update() {
+    int getTurn(vector<Agent*> boid) {
+        vector<Agent*> group = {this};
+        double avgdir = dir;
+        for (Agent* b : boid) {
+            if ((pow(realpos.first - b->realpos.first, 2) + pow(realpos.second - b->realpos.second, 2)) <= pow(SIGHT_RADIUS, 2)) {
+                group.push_back(b);
+                avgdir += b->dir;
+            }
+        }
+        avgdir /= (double) group.size();
+        random_device rd;
+        mt19937 mt(rd());
+        uniform_real_distribution<double> dist(-15, 15);
+        return avgdir + dist(mt);
+    }
+    void update(vector<Agent*> boid) {
+        dir += (getTurn(boid) - dir) / TURN_SPEED;
         double delta = max((SDL_GetTicks() - starttick) / 5.0, 0.01);
         double ny = realpos.second - sin(dir * M_PI / 180) * speed * delta;
         double nx = realpos.first + cos(dir * M_PI / 180) * speed * delta;
@@ -114,11 +135,12 @@ int init() {
 int main(int argc, char *argv[]) {
     if (!init()) return 1;
 
-    boid.push_back(new Agent(50, 350, 45));
-    boid.push_back(new Agent(350, 300, 143)); 
-    boid.push_back(new Agent(50, 300, 230));
-    boid.push_back(new Agent(350, 50, 333));
-
+    random_device rd;
+    mt19937 mt(rd());
+    uniform_real_distribution<double> dist(0, SDL_WINDOW_SIZE);
+    for (int i = 0; i < AGENT_AMOUNT; i ++) {
+        boid.push_back(new Agent(dist(mt), dist(mt), (int)dist(mt) % 360));
+    }
     //Hack to get window to stay up
     SDL_Event e; bool quit = false; 
     while (!quit) { 
@@ -131,7 +153,7 @@ int main(int argc, char *argv[]) {
 
         SDL_RenderClear(renderer);
         for (Agent* a : boid) {
-            a->update();
+            a->update(boid);
             a->render();
         }
         SDL_RenderPresent(renderer);
