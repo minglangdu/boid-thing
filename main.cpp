@@ -114,10 +114,10 @@ int init() {
 int main(int argc, char *argv[]) {
     if (!init()) return 1;
 
-    boid.push_back(new Agent(50, 300, 0));
-    boid.push_back(new Agent(50, 300, 90)); 
-    boid.push_back(new Agent(50, 300, 180));
-    boid.push_back(new Agent(50, 300, 270));
+    boid.push_back(new Agent(50, 350, 45));
+    boid.push_back(new Agent(350, 300, 143)); 
+    boid.push_back(new Agent(50, 300, 230));
+    boid.push_back(new Agent(350, 50, 333));
 
     //Hack to get window to stay up
     SDL_Event e; bool quit = false; 
