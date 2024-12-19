@@ -6,13 +6,13 @@
 
 using namespace std;
 
-const int SDL_WINDOW_SIZE = 700;
+const int SDL_WINDOW_SIZE = 400;
 const int AGENT_SIZE = 15;
 const int AGENT_AMOUNT = 30;
-const int TURN_SPEED = 15; // larger values are slower turns
+const int TURN_SPEED = 5; // larger values are slower turns
 const int MOVE_SPEED = 1;
-const int SIGHT_RADIUS = 150;
-const int DEVIATION_ANGLE = 70;
+const int SIGHT_RADIUS = 25;
+const int DEVIATION_ANGLE = 100;
 
 SDL_Window* window = NULL;
 SDL_Texture* agenttex = NULL;
