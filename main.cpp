@@ -7,8 +7,6 @@ using namespace std;
 
 const int SDL_WINDOW_SIZE = 600;
 const int AGENT_SIZE = 30;
-const int SCREEN_FPS = 60;
-const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 SDL_Window* window = NULL;
 SDL_Texture* agenttex = NULL;
@@ -16,7 +14,8 @@ SDL_Renderer* renderer = NULL;
 struct Agent {
     SDL_Rect* rect = new SDL_Rect;
     double dir = 0;
-    double speed = 1;
+    double speed = 2;
+    Uint32 starttick;
     pair<double, double> realpos;
     SDL_Texture* tex = agenttex;
     Agent(int x, int y, double d) {
@@ -27,10 +26,13 @@ struct Agent {
         rect->h = AGENT_SIZE;
         rect->w = AGENT_SIZE;
         dir = d - 90;
+        starttick = SDL_GetTicks();
     };
     void update() {
-        double ny = realpos.second - sin(dir * M_PI / 180) * speed;
-        double nx = realpos.first + cos(dir * M_PI / 180) * speed;
+        double delta = max((SDL_GetTicks() - starttick) / 5.0, 0.01);
+        double ny = realpos.second - sin(dir * M_PI / 180) * speed * delta;
+        double nx = realpos.first + cos(dir * M_PI / 180) * speed * delta;
+        starttick = SDL_GetTicks();
         // cout << nx << " " << ny << "\n";
         if (ny < 0) {
             ny += SDL_WINDOW_SIZE;
@@ -50,7 +52,7 @@ struct Agent {
     void render() {
         rect->x = realpos.first;
         rect->y = realpos.second;
-        SDL_RenderCopyEx(renderer, tex, NULL, rect, dir + 90, NULL, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, tex, NULL, rect, 90 - dir, NULL, SDL_FLIP_NONE);
     }
 };
 vector<Agent*> boid;
