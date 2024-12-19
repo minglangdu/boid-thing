@@ -6,12 +6,13 @@
 
 using namespace std;
 
-const int SDL_WINDOW_SIZE = 600;
-const int AGENT_SIZE = 30;
-const int AGENT_AMOUNT = 10;
-const int TURN_SPEED = 5; // larger values are slower turns
-const int MOVE_SPEED = 2;
-const int SIGHT_RADIUS = 50;
+const int SDL_WINDOW_SIZE = 700;
+const int AGENT_SIZE = 15;
+const int AGENT_AMOUNT = 30;
+const int TURN_SPEED = 15; // larger values are slower turns
+const int MOVE_SPEED = 1;
+const int SIGHT_RADIUS = 150;
+const int DEVIATION_ANGLE = 70;
 
 SDL_Window* window = NULL;
 SDL_Texture* agenttex = NULL;
@@ -45,7 +46,7 @@ struct Agent {
         avgdir /= (double) group.size();
         random_device rd;
         mt19937 mt(rd());
-        uniform_real_distribution<double> dist(-15, 15);
+        uniform_real_distribution<double> dist(-(DEVIATION_ANGLE / 2), DEVIATION_ANGLE / 2);
         return avgdir + dist(mt);
     }
     void update(vector<Agent*> boid) {
