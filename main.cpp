@@ -6,18 +6,7 @@
 
 using namespace std;
 
-const int SDL_WINDOW_SIZE = 600;
-const int AGENT_SIZE = 15;
-const int AGENT_AMOUNT = 20;
-const int TURN_SPEED = 5; // larger values are slower turns
-const int MOVE_SPEED = 1;
-const int SIGHT_RADIUS = 25;
-const int DEVIATION_ANGLE = 50;
-
-const double ALIGNMENT_STRENGTH = 0.1;
-
-const int AVOID_RADIUS = 15;
-const double AVOID_STRENGTH = 0.2;
+#include "constants.h"
 
 SDL_Window* window = NULL;
 SDL_Texture* agenttex = NULL;
@@ -40,14 +29,15 @@ struct Agent {
         starttick = SDL_GetTicks();
     };
     int getTurn(vector<Agent*> boid) {
-        double align_amt = 1, avoid_amt = 0;
+        double align_amt = 1, avoid_amt = 0, cohere_amt = 1;
         double align = dir;
         pair<double, double> avoid = {0, 0};
-        double avoid_angle = 0;
+        double avoid_angle = 0, cohere_angle = 0;
+        pair<double, double> cohere = {realpos.first, realpos.second};
         for (Agent* b : boid) {
             if (b == this) continue;
             if ((pow(realpos.first - b->realpos.first, 2) + 
-            pow(realpos.second - b->realpos.second, 2)) <= pow(SIGHT_RADIUS, 2)) {
+            pow(realpos.second - b->realpos.second, 2)) <= pow(ALIGNMENT_RADIUS, 2)) {
                 align_amt ++;
                 align += b->dir;
             }
@@ -56,6 +46,12 @@ struct Agent {
                 avoid.first += (b->realpos.first - realpos.first);
                 avoid.second += (b->realpos.second - realpos.second);
                 avoid_amt ++;
+            }
+            if ((pow(realpos.first - b->realpos.first, 2) + 
+            pow(realpos.second - b->realpos.second, 2)) <= pow(COHERENCE_RADIUS, 2)) {
+                cohere.first += (b->realpos.first);
+                cohere.second += (b->realpos.second);
+                cohere_amt ++;
             }
         }
         align /= align_amt;
@@ -67,6 +63,12 @@ struct Agent {
             ans += (avoid_angle - dir) * AVOID_STRENGTH;
         }
         ans += (align - dir) * ALIGNMENT_STRENGTH;
+        if (cohere_amt > 1) {
+            cohere.first /= cohere_amt;
+            cohere.second /= cohere_amt;
+            cohere_angle = atan2(cohere.second, cohere.first) * 360 / M_PI;
+            ans += (cohere_angle - dir) * COHERENCE_STRENGTH;
+        }
         random_device rd;
         mt19937 mt(rd());
         uniform_real_distribution<double> dist(-(DEVIATION_ANGLE / 2), DEVIATION_ANGLE / 2);
