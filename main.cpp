@@ -6,13 +6,18 @@
 
 using namespace std;
 
-const int SDL_WINDOW_SIZE = 400;
+const int SDL_WINDOW_SIZE = 600;
 const int AGENT_SIZE = 15;
-const int AGENT_AMOUNT = 30;
+const int AGENT_AMOUNT = 20;
 const int TURN_SPEED = 5; // larger values are slower turns
 const int MOVE_SPEED = 1;
 const int SIGHT_RADIUS = 25;
-const int DEVIATION_ANGLE = 100;
+const int DEVIATION_ANGLE = 50;
+
+const double ALIGNMENT_STRENGTH = 0.1;
+
+const int AVOID_RADIUS = 15;
+const double AVOID_STRENGTH = 0.2;
 
 SDL_Window* window = NULL;
 SDL_Texture* agenttex = NULL;
@@ -35,19 +40,37 @@ struct Agent {
         starttick = SDL_GetTicks();
     };
     int getTurn(vector<Agent*> boid) {
-        vector<Agent*> group = {this};
-        double avgdir = dir;
+        double align_amt = 1, avoid_amt = 0;
+        double align = dir;
+        pair<double, double> avoid = {0, 0};
+        double avoid_angle = 0;
         for (Agent* b : boid) {
-            if ((pow(realpos.first - b->realpos.first, 2) + pow(realpos.second - b->realpos.second, 2)) <= pow(SIGHT_RADIUS, 2)) {
-                group.push_back(b);
-                avgdir += b->dir;
+            if (b == this) continue;
+            if ((pow(realpos.first - b->realpos.first, 2) + 
+            pow(realpos.second - b->realpos.second, 2)) <= pow(SIGHT_RADIUS, 2)) {
+                align_amt ++;
+                align += b->dir;
+            }
+            if ((pow(realpos.first - b->realpos.first, 2) + 
+            pow(realpos.second - b->realpos.second, 2)) <= pow(AVOID_RADIUS, 2)) {
+                avoid.first += (b->realpos.first - realpos.first);
+                avoid.second += (b->realpos.second - realpos.second);
+                avoid_amt ++;
             }
         }
-        avgdir /= (double) group.size();
+        align /= align_amt;
+        double ans = dir;
+        if (avoid_amt > 0) {
+            avoid.first /= avoid_amt;
+            avoid.second /= avoid_amt;
+            avoid_angle = atan2(avoid.second, avoid.first) * 360 / M_PI;
+            ans += (avoid_angle - dir) * AVOID_STRENGTH;
+        }
+        ans += (align - dir) * ALIGNMENT_STRENGTH;
         random_device rd;
         mt19937 mt(rd());
         uniform_real_distribution<double> dist(-(DEVIATION_ANGLE / 2), DEVIATION_ANGLE / 2);
-        return avgdir + dist(mt);
+        return ans + dist(mt);
     }
     void update(vector<Agent*> boid) {
         dir += (getTurn(boid) - dir) / TURN_SPEED;
@@ -139,17 +162,14 @@ int main(int argc, char *argv[]) {
     random_device rd;
     mt19937 mt(rd());
     uniform_real_distribution<double> dist(0, SDL_WINDOW_SIZE);
+    uniform_real_distribution<double> ang(0, 359);
     for (int i = 0; i < AGENT_AMOUNT; i ++) {
-        boid.push_back(new Agent(dist(mt), dist(mt), (int)dist(mt) % 360));
+        boid.push_back(new Agent(dist(mt), dist(mt), 180));
     }
-    //Hack to get window to stay up
     SDL_Event e; bool quit = false; 
     while (!quit) { 
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) quit = true; 
-            // if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RIGHT) {
-            //     rect.x += 5;
-            // }
         } 
 
         SDL_RenderClear(renderer);
