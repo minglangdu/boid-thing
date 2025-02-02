@@ -28,30 +28,45 @@ struct Agent {
         dir = d - 90;
         starttick = SDL_GetTicks();
     };
+    int getDist(int x1, int y1, int x2, int y2) {
+        int xdist = abs(x2 - x1);
+        int ydist = abs(y2 - y1);
+        return pow(xdist, 2) + pow(ydist, 2);
+    }
     int getTurn(vector<Agent*> boid) {
         double align_amt = 1, avoid_amt = 0, cohere_amt = 1;
         double align = dir;
         pair<double, double> avoid = {0, 0};
         double avoid_angle = 0, cohere_angle = 0;
         pair<double, double> cohere = {realpos.first, realpos.second};
+        pair<double, double> obstacle = {0, 0};
+        double obstacle_angle = 0;
         for (Agent* b : boid) {
             if (b == this) continue;
-            if ((pow(realpos.first - b->realpos.first, 2) + 
-            pow(realpos.second - b->realpos.second, 2)) <= pow(ALIGNMENT_RADIUS, 2)) {
+            int dist = getDist(realpos.first, realpos.second, b->realpos.first, b->realpos.second);
+            if (dist <= pow(ALIGNMENT_RADIUS, 2)) {
                 align_amt ++;
                 align += b->dir;
             }
-            if ((pow(realpos.first - b->realpos.first, 2) + 
-            pow(realpos.second - b->realpos.second, 2)) <= pow(AVOID_RADIUS, 2)) {
-                avoid.first += (b->realpos.first - realpos.first);
-                avoid.second += (b->realpos.second - realpos.second);
+            if (dist <= pow(AVOID_RADIUS, 2)) {
+                avoid.first += (AVOID_RADIUS - (b->realpos.first - realpos.first)) * -1;
+                avoid.second += (AVOID_RADIUS - (b->realpos.second - realpos.second)) * -1;
                 avoid_amt ++;
             }
-            if ((pow(realpos.first - b->realpos.first, 2) + 
-            pow(realpos.second - b->realpos.second, 2)) <= pow(COHERENCE_RADIUS, 2)) {
+            if (dist <= pow(COHERENCE_RADIUS, 2)) {
                 cohere.first += (b->realpos.first);
                 cohere.second += (b->realpos.second);
                 cohere_amt ++;
+            }
+        }
+        for (int x = 0; x <= SDL_WINDOW_SIZE; x += SDL_WINDOW_SIZE) {
+            if (abs(realpos.first - x) <= OBSTACLE_RADIUS) {
+                obstacle.first += (OBSTACLE_RADIUS - (realpos.first - x)) * -1;
+            }
+        }
+        for (int y = 0; y <= SDL_WINDOW_SIZE; y += SDL_WINDOW_SIZE) {
+            if (abs(realpos.second - y) <= OBSTACLE_RADIUS) {
+                obstacle.second += (OBSTACLE_RADIUS - (realpos.second - y)) * -1;
             }
         }
         align /= align_amt;
@@ -62,6 +77,8 @@ struct Agent {
             avoid_angle = atan2(avoid.second, avoid.first) * 360 / M_PI;
             ans += (avoid_angle - dir) * AVOID_STRENGTH;
         }
+        obstacle_angle = atan2(obstacle.second, obstacle.first) * 360 / M_PI;
+        ans += (obstacle_angle - dir) * OBSTACLE_STRENGTH;
         ans += (align - dir) * ALIGNMENT_STRENGTH;
         if (cohere_amt > 1) {
             cohere.first /= cohere_amt;
