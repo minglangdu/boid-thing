@@ -60,13 +60,13 @@ struct Agent {
             }
         }
         for (int x = 0; x <= SDL_WINDOW_SIZE; x += SDL_WINDOW_SIZE) {
-            if (abs(realpos.first - x) <= OBSTACLE_RADIUS) {
-                obstacle.first += (OBSTACLE_RADIUS - (realpos.first - x)) * -1;
+            if (abs(realpos.first - abs(x - OBSTACLE_RADIUS))) {
+                obstacle.first += ((x == 0) ? 1 : -1) * OBSTACLE_STRENGTH;
             }
         }
         for (int y = 0; y <= SDL_WINDOW_SIZE; y += SDL_WINDOW_SIZE) {
-            if (abs(realpos.second - y) <= OBSTACLE_RADIUS) {
-                obstacle.second += (OBSTACLE_RADIUS - (realpos.second - y)) * -1;
+            if (abs(realpos.second - abs(y - OBSTACLE_RADIUS))) {
+                obstacle.second += ((y == 0) ? 1 : -1) * OBSTACLE_STRENGTH;
             }
         }
         align /= align_amt;
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     uniform_real_distribution<double> dist(0, SDL_WINDOW_SIZE);
     uniform_real_distribution<double> ang(0, 359);
     for (int i = 0; i < AGENT_AMOUNT; i ++) {
-        boid.push_back(new Agent(dist(mt), dist(mt), 180));
+        boid.push_back(new Agent(dist(mt), dist(mt), ang(mt)));
     }
     SDL_Event e; bool quit = false; 
     while (!quit) { 
